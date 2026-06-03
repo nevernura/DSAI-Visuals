@@ -1,0 +1,69 @@
+# Cursor Rules - Core Engineering Discipline
+# Drop this file in your project root as `.cursorrules`.
+# These are generic, language-agnostic rules. Add project-specific rules below.
+
+## Truthfulness & accuracy (most important)
+- Never invent APIs, libraries, functions, methods, or config options. If you are
+  not sure something exists, say so explicitly instead of guessing.
+- If a request is ambiguous or you lack context, ask a clarifying question rather
+  than assuming. A wrong assumption is more expensive than a question.
+- Do not fabricate file paths, env var names, or data. If you need to see a file,
+  ask to read it; do not imagine its contents.
+- When you are uncertain, state your confidence level and what would resolve it.
+
+## Read before you write
+- Before editing, read the surrounding code and match the project's existing
+  patterns, naming conventions, style, and libraries. Do not impose a new style.
+- Use the language/framework versions already in the project. Do not introduce a
+  new framework, library, or major dependency without flagging it and explaining
+  why it's needed.
+
+## Make minimal, focused changes
+- Change only what the task requires. Do not refactor, rename, or reformat
+  unrelated code unless asked.
+- Do not rewrite an entire file when a small edit will do.
+- Never delete existing code or functionality unless it's clearly part of the
+  task. Preserve working behavior.
+- Do not silently change public interfaces (function signatures, API routes,
+  schemas). Call it out if a change is necessary.
+
+## Don't fake it
+- No placeholder logic, stub data, or "TODO: implement later" unless explicitly
+  requested. If you can't complete something, say what's missing and why.
+- Do not hardcode values to make a test or demo pass. Solve the real problem.
+- If you generate example/mock data, label it clearly as mock.
+
+## Correctness & robustness
+- Handle errors and edge cases explicitly. No empty/bare catch blocks that swallow
+  errors. Fail loudly with a clear message rather than failing silently.
+- Validate inputs at boundaries (user input, file I/O, network, external data).
+- Check for the obvious failure modes: null/None, empty collections, division by
+  zero, missing files, off-by-one in ranges and indices.
+- Prefer clear, simple code over clever code. Readability beats brevity.
+
+## Security
+- Never hardcode secrets, API keys, passwords, tokens, or credentials. Read them
+  from environment variables or a secrets manager.
+- Never put sensitive data in logs, URLs, or query strings.
+- Use parameterized queries / prepared statements - never build SQL (or shell
+  commands) by string concatenation of user input.
+- Don't commit `.env`, credentials, or generated artifacts. Respect `.gitignore`.
+
+## Code quality
+- Use type hints / types wherever the language supports them.
+- Keep functions small and single-purpose. Avoid deep nesting; prefer early returns.
+- Avoid global mutable state. Pass dependencies explicitly.
+- Name things for what they are. No single-letter names except trivial loop counters.
+- Comments explain *why*, not *what*. Don't comment the obvious; do document
+  non-obvious decisions, assumptions, and units (e.g. "value in kPa").
+
+## Testing
+- When adding non-trivial logic, add or update tests, or state exactly how to test it.
+- Make code testable: pure functions where possible, side effects at the edges.
+- Don't claim something works - show how it was or can be verified.
+
+## Communication
+- For anything beyond a trivial edit, briefly explain your approach before the code.
+- Flag risky or irreversible actions (deleting data, migrations, changing auth,
+  rate-limited or paid API calls) and wait for confirmation.
+- When you finish, note any assumptions you made and anything left to do.
