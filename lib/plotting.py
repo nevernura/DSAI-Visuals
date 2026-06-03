@@ -19,7 +19,79 @@ PATH_DOT = "#D85A30"
 MIN_MARK = "#FFFFFF"
 RESID = "rgba(136,135,128,0.55)"
 CLASS_0 = "#4C78A8"
+
 CLASS_1 = "#D85A30"
+
+
+def _class_colors(labels):
+    """Map binary class labels to the app's two class colors."""
+    labels = np.asarray(labels, dtype=int)
+    return [CLASS_1 if label == 1 else CLASS_0 for label in labels]
+
+
+def _add_classification_animation(fig, points, predicted_labels, name="model classifications"):
+    """Add Plotly frames that reveal model classifications point by point."""
+    points = np.asarray(points, dtype=float)
+    predicted_labels = np.asarray(predicted_labels, dtype=int)
+    if len(points) == 0:
+        return fig
+
+    order = np.argsort(points[:, 0])
+    ordered_points = points[order]
+    ordered_labels = predicted_labels[order]
+    colors = _class_colors(ordered_labels)
+
+    trace_index = len(fig.data)
+    fig.add_scatter(
+        x=[], y=[], mode="markers",
+        marker=dict(size=13, color=[], line=dict(width=2, color=MIN_MARK)),
+        name=name, hoverinfo="skip",
+    )
+
+    step_count = min(30, len(ordered_points))
+    stops = np.unique(np.linspace(0, len(ordered_points), step_count + 1, dtype=int))
+    fig.frames = [
+        go.Frame(
+            data=[go.Scatter(
+                x=ordered_points[:stop, 0],
+                y=ordered_points[:stop, 1],
+                mode="markers",
+                marker=dict(
+                    size=13,
+                    color=colors[:stop],
+                    line=dict(width=2, color=MIN_MARK),
+                ),
+                hoverinfo="skip",
+            )],
+            traces=[trace_index],
+            name=str(stop),
+        )
+        for stop in stops
+    ]
+
+    play_controls = dict(
+        type="buttons", showactive=False, x=0.0, y=1.14, xanchor="left",
+        buttons=[
+            dict(label="Classify", method="animate",
+                 args=[None, dict(frame=dict(duration=120, redraw=False),
+                                  fromcurrent=True, mode="immediate")]),
+            dict(label="Pause", method="animate",
+                 args=[[None], dict(frame=dict(duration=0, redraw=False),
+                                    mode="immediate")]),
+        ],
+    )
+    slider = dict(
+        x=0.0, y=-0.08, len=1.0,
+        currentvalue=dict(prefix="Classified points "),
+        steps=[
+            dict(method="animate", label=str(stop),
+                 args=[[str(stop)], dict(mode="immediate",
+                                          frame=dict(duration=0, redraw=False))])
+            for stop in stops
+        ],
+    )
+    fig.update_layout(updatemenus=[play_controls], sliders=[slider])
+    return fig
 
 
 def descent_figure(path):
@@ -186,7 +258,10 @@ def logistic_figure(points, labels, weights, bias, show_probability=True):
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
-    return fig
+    predicted_labels = (probabilities(points, weights, bias) >= 0.5).astype(int)
+    return _add_classification_animation(
+        fig, points, predicted_labels, name="logistic classifications"
+    )
 
 
 def eigen_figure(matrix, values, vectors, show_circle=True):
@@ -338,7 +413,7 @@ def pca_figure(points, mean, components, scores, n_components=2, show_shadow=Tru
 
 
 def classifier_figure(model, points, labels, title=None, support_vectors=None):
-    """Decision surface for a fitted 2D classifier."""
+    """Decision surface for a fitted 2D classifier with a classification animation."""
     points = np.asarray(points, dtype=float)
     labels = np.asarray(labels, dtype=int)
     x_range = (float(points[:, 0].min()) - 1.0, float(points[:, 0].max()) + 1.0)
@@ -388,7 +463,8 @@ def classifier_figure(model, points, labels, title=None, support_vectors=None):
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
-    return fig
+    predicted_labels = model.predict(points) if hasattr(model, "predict") else labels
+    return _add_classification_animation(fig, points, predicted_labels)
 
 
 
@@ -444,6 +520,9 @@ def perceptron_figure(points, labels, weights, bias):
 
         def decision_function(self, grid):
             return np.asarray(grid, dtype=float) @ self.weights + self.bias
+
+        def predict(self, grid):
+            return (self.decision_function(grid) >= 0).astype(int)
 
     fig = classifier_figure(Boundary(weights, bias), points, labels, title="Perceptron boundary")
     x_range = fig.layout.xaxis.range
