@@ -8,6 +8,10 @@ visibly fails.
 This build ships the **shared template** plus the **gradient descent** module as
 the reference implementation. Every other module is added by copying that page.
 
+## Link
+
+https://dsai-visuals.streamlit.app
+
 ## Run locally
 
 ```bash
