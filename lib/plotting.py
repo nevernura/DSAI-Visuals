@@ -3,18 +3,22 @@
 The descent figure draws the loss surface once (a contour) and animates only
 the path trace via Plotly frames. The animation therefore runs entirely in the
 browser -- no server-side loop -- which keeps it smooth on Streamlit Community
-Cloud's free tier.
+Cloud's free tier. Regression/classification figures are static and reuse the
+same visual language.
 """
 
 import numpy as np
 import plotly.graph_objects as go
 
 from lib.descent import surface_grid, X_RANGE, Y_RANGE
+from lib.logistic import probabilities
 
 PATH_LINE = "#F0997B"
 PATH_DOT = "#D85A30"
 MIN_MARK = "#FFFFFF"
 RESID = "rgba(136,135,128,0.55)"
+CLASS_0 = "#4C78A8"
+CLASS_1 = "#D85A30"
 
 
 def descent_figure(path):
@@ -118,6 +122,67 @@ def regression_figure(x, y, slope, intercept, residuals=False):
         height=480, margin=dict(l=10, r=10, t=20, b=10),
         xaxis=dict(title="x", zeroline=False),
         yaxis=dict(title="y", zeroline=False),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def logistic_figure(points, labels, weights, bias, show_probability=True):
+    """Scatter of labelled points with a logistic decision boundary."""
+    points = np.asarray(points, dtype=float)
+    labels = np.asarray(labels, dtype=int)
+    weights = np.asarray(weights, dtype=float)
+
+    fig = go.Figure()
+    x_range = (float(points[:, 0].min()) - 1.0, float(points[:, 0].max()) + 1.0)
+    y_range = (float(points[:, 1].min()) - 1.0, float(points[:, 1].max()) + 1.0)
+
+    if show_probability:
+        xs = np.linspace(*x_range, 80)
+        ys = np.linspace(*y_range, 80)
+        gx, gy = np.meshgrid(xs, ys)
+        grid = np.c_[gx.ravel(), gy.ravel()]
+        z = probabilities(grid, weights, bias).reshape(gx.shape)
+        fig.add_contour(
+            x=xs, y=ys, z=z, colorscale="RdBu", reversescale=True,
+            contours=dict(start=0.0, end=1.0, size=0.1, showlabels=False),
+            opacity=0.35, showscale=False, hoverinfo="skip",
+        )
+
+    mask = labels == 1
+    fig.add_scatter(
+        x=points[~mask, 0], y=points[~mask, 1], mode="markers",
+        marker=dict(size=8, color=CLASS_0, line=dict(width=1, color="white")),
+        name="class 0", hoverinfo="skip",
+    )
+    fig.add_scatter(
+        x=points[mask, 0], y=points[mask, 1], mode="markers",
+        marker=dict(size=8, color=CLASS_1, line=dict(width=1, color="white")),
+        name="class 1", hoverinfo="skip",
+    )
+
+    w1, w2 = weights
+    if abs(w2) > 1e-9:
+        xs = np.array(x_range)
+        ys = -(w1 * xs + bias) / w2
+        fig.add_scatter(
+            x=xs, y=ys, mode="lines",
+            line=dict(color=PATH_LINE, width=3),
+            name="p = 0.5", hoverinfo="skip",
+        )
+    elif abs(w1) > 1e-9:
+        x0 = -bias / w1
+        fig.add_scatter(
+            x=[x0, x0], y=list(y_range), mode="lines",
+            line=dict(color=PATH_LINE, width=3),
+            name="p = 0.5", hoverinfo="skip",
+        )
+
+    fig.update_layout(
+        height=500, margin=dict(l=10, r=10, t=20, b=10),
+        xaxis=dict(title="feature 1", range=list(x_range), zeroline=False),
+        yaxis=dict(title="feature 2", range=list(y_range), zeroline=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig
