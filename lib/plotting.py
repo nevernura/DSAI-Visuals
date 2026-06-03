@@ -565,3 +565,168 @@ def convolution_figure(image, output, row, col):
     )
     return fig
 
+
+def _axis_limit(*arrays, floor=4.0):
+    """Shared square-axis limit for small vector/grid figures."""
+    values = [np.max(np.abs(np.asarray(array, dtype=float))) for array in arrays if len(np.asarray(array).ravel())]
+    return max(floor, float(max(values, default=floor)) + 0.8)
+
+
+def _add_vector(fig, vector, name, color, row=None, col=None, dash=None):
+    """Draw a vector from the origin."""
+    vector = np.asarray(vector, dtype=float)
+    line = dict(color=color, width=4)
+    if dash:
+        line["dash"] = dash
+    scatter = go.Scatter(
+        x=[0.0, vector[0]], y=[0.0, vector[1]], mode="lines+markers",
+        line=line, marker=dict(size=7, color=color), name=name, hoverinfo="skip",
+    )
+    if row is None:
+        fig.add_trace(scatter)
+    else:
+        fig.add_trace(scatter, row=row, col=col)
+
+
+def _grid_segments(limit=3, n=13):
+    """Grid line segments separated by None for Plotly scatter lines."""
+    ticks = np.linspace(-limit, limit, n)
+    x, y = [], []
+    for tick in ticks:
+        x += [-limit, limit, None]
+        y += [tick, tick, None]
+        x += [tick, tick, None]
+        y += [-limit, limit, None]
+    return np.array(x, dtype=object), np.array(y, dtype=object)
+
+
+def _transform_segment_coords(matrix, x, y):
+    coords = np.array([[xi, yi] for xi, yi in zip(x, y) if xi is not None], dtype=float)
+    transformed = coords @ np.asarray(matrix, dtype=float).T
+    tx, ty, cursor = [], [], 0
+    for xi in x:
+        if xi is None:
+            tx.append(None)
+            ty.append(None)
+        else:
+            tx.append(float(transformed[cursor, 0]))
+            ty.append(float(transformed[cursor, 1]))
+            cursor += 1
+    return tx, ty
+
+
+def vector_dot_figure(a, b, projection):
+    """Two vectors plus the projection of a onto b."""
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    projection = np.asarray(projection, dtype=float)
+    fig = go.Figure()
+    _add_vector(fig, a, "vector a", CLASS_1)
+    _add_vector(fig, b, "vector b", CLASS_0)
+    _add_vector(fig, projection, "projection of a onto b", PATH_LINE, dash="dash")
+    fig.add_scatter(
+        x=[a[0], projection[0]], y=[a[1], projection[1]], mode="lines",
+        line=dict(color=RESID, width=2, dash="dot"), name="perpendicular gap",
+        hoverinfo="skip",
+    )
+    limit = _axis_limit(a, b, projection)
+    fig.update_layout(
+        height=500, margin=dict(l=10, r=10, t=20, b=10),
+        xaxis=dict(title="x", range=[-limit, limit], zeroline=True, scaleanchor="y"),
+        yaxis=dict(title="y", range=[-limit, limit], zeroline=True),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def matrix_transform_figure(matrix, show_original=True):
+    """Original and transformed coordinate grid for a 2D matrix."""
+    matrix = np.asarray(matrix, dtype=float)
+    gx, gy = _grid_segments(limit=3, n=13)
+    tx, ty = _transform_segment_coords(matrix, gx, gy)
+    fig = go.Figure()
+    if show_original:
+        fig.add_scatter(
+            x=gx, y=gy, mode="lines",
+            line=dict(color="rgba(255,255,255,0.25)", width=1),
+            name="original grid", hoverinfo="skip",
+        )
+    fig.add_scatter(
+        x=tx, y=ty, mode="lines",
+        line=dict(color=PATH_LINE, width=2),
+        name="transformed grid", hoverinfo="skip",
+    )
+    _add_vector(fig, matrix @ np.array([1.0, 0.0]), "A e1", CLASS_0)
+    _add_vector(fig, matrix @ np.array([0.0, 1.0]), "A e2", CLASS_1)
+    limit = _axis_limit(np.array([v for v in zip(tx, ty) if v[0] is not None], dtype=float))
+    fig.update_layout(
+        height=520, margin=dict(l=10, r=10, t=20, b=10),
+        xaxis=dict(title="x", range=[-limit, limit], zeroline=True, scaleanchor="y"),
+        yaxis=dict(title="y", range=[-limit, limit], zeroline=True),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def matrix_multiplication_figure(first, second):
+    """Show matrix multiplication as applying one transform after another."""
+    first = np.asarray(first, dtype=float)
+    second = np.asarray(second, dtype=float)
+    combined = second @ first
+    gx, gy = _grid_segments(limit=2.5, n=11)
+    fx, fy = _transform_segment_coords(first, gx, gy)
+    cx, cy = _transform_segment_coords(combined, gx, gy)
+    fig = make_subplots(
+        rows=1, cols=3,
+        subplot_titles=("Start", "After first matrix", "After second x first"),
+    )
+    for col, xs, ys, color, name in [
+        (1, gx, gy, "rgba(255,255,255,0.45)", "start"),
+        (2, fx, fy, CLASS_0, "first"),
+        (3, cx, cy, PATH_LINE, "second first"),
+    ]:
+        fig.add_trace(
+            go.Scatter(x=xs, y=ys, mode="lines", line=dict(color=color, width=2), name=name, hoverinfo="skip"),
+            row=1, col=col,
+        )
+    fig.update_xaxes(range=[-5, 5], zeroline=True)
+    fig.update_yaxes(range=[-5, 5], zeroline=True, scaleanchor="x")
+    fig.update_layout(
+        height=430, margin=dict(l=10, r=10, t=45, b=10), showlegend=False,
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def projection_figure(vector, direction, projection):
+    """Vector projection onto a line, with perpendicular residual."""
+    vector = np.asarray(vector, dtype=float)
+    direction = np.asarray(direction, dtype=float)
+    projection = np.asarray(projection, dtype=float)
+    unit = direction / (np.linalg.norm(direction) or 1.0)
+    line = np.vstack([-unit * 5.0, unit * 5.0])
+    fig = go.Figure()
+    fig.add_scatter(
+        x=line[:, 0], y=line[:, 1], mode="lines",
+        line=dict(color="rgba(255,255,255,0.35)", width=2),
+        name="target line", hoverinfo="skip",
+    )
+    _add_vector(fig, vector, "vector", CLASS_1)
+    _add_vector(fig, projection, "projection", PATH_LINE, dash="dash")
+    fig.add_scatter(
+        x=[vector[0], projection[0]], y=[vector[1], projection[1]], mode="lines",
+        line=dict(color=RESID, width=3, dash="dot"), name="orthogonal residual",
+        hoverinfo="skip",
+    )
+    limit = _axis_limit(vector, projection, line)
+    fig.update_layout(
+        height=500, margin=dict(l=10, r=10, t=20, b=10),
+        xaxis=dict(title="x", range=[-limit, limit], zeroline=True, scaleanchor="y"),
+        yaxis=dict(title="y", range=[-limit, limit], zeroline=True),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
