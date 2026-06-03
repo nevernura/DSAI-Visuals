@@ -44,3 +44,16 @@ def two_rings(n=200, noise=0.12, seed=0):
     pts = np.vstack([inner, outer])
     labels = np.concatenate([np.zeros(half), np.ones(half)])
     return pts, labels
+
+
+@st.cache_data
+def correlated_cloud_3d(n=180, seed=0):
+    """Small 3D cloud with one dominant and one secondary direction."""
+    rng = np.random.default_rng(seed)
+    latent = rng.normal(size=(n, 3))
+    transform = np.array([
+        [3.0, 1.2, 0.2],
+        [1.0, 1.6, 0.5],
+        [0.4, 0.8, 0.7],
+    ])
+    return latent @ transform.T
