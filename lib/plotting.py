@@ -6,6 +6,7 @@ browser -- no server-side loop -- which keeps it smooth on Streamlit Community
 Cloud's free tier.
 """
 
+import numpy as np
 import plotly.graph_objects as go
 
 from lib.descent import surface_grid, X_RANGE, Y_RANGE
@@ -13,6 +14,7 @@ from lib.descent import surface_grid, X_RANGE, Y_RANGE
 PATH_LINE = "#F0997B"
 PATH_DOT = "#D85A30"
 MIN_MARK = "#FFFFFF"
+RESID = "rgba(136,135,128,0.55)"
 
 
 def descent_figure(path):
@@ -76,6 +78,46 @@ def descent_figure(path):
         xaxis=dict(title="Parameter w\u2081", range=list(X_RANGE), zeroline=False),
         yaxis=dict(title="Parameter w\u2082", range=list(Y_RANGE), zeroline=False),
         height=520, margin=dict(l=10, r=10, t=40, b=10),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def regression_figure(x, y, slope, intercept, residuals=False):
+    """Scatter of (x, y) with a fitted line; optional residual segments."""
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    fig = go.Figure()
+
+    if residuals:
+        rx, ry = [], []
+        for xi, yi in zip(x, y):
+            rx += [xi, xi, None]
+            ry += [yi, slope * xi + intercept, None]
+        fig.add_scatter(
+            x=rx, y=ry, mode="lines",
+            line=dict(color=RESID, width=1),
+            hoverinfo="skip", showlegend=False,
+        )
+
+    fig.add_scatter(
+        x=x, y=y, mode="markers",
+        marker=dict(size=8, color=PATH_DOT),
+        hoverinfo="skip", showlegend=False,
+    )
+
+    ends = np.array([float(x.min()), float(x.max())])
+    fig.add_scatter(
+        x=ends, y=slope * ends + intercept, mode="lines",
+        line=dict(color=PATH_LINE, width=3),
+        hoverinfo="skip", showlegend=False,
+    )
+
+    fig.update_layout(
+        height=480, margin=dict(l=10, r=10, t=20, b=10),
+        xaxis=dict(title="x", zeroline=False),
+        yaxis=dict(title="y", zeroline=False),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig
