@@ -3,7 +3,12 @@
 Navigation is grouped into sections so the sidebar reads like a curriculum:
 Linear Algebra -> Machine Learning -> Deep Learning. To add a module, create
 its page in views/ and add an st.Page line to the right section below.
+
+Page paths are anchored to this file's own location so they resolve the same
+way locally and on Streamlit Community Cloud, regardless of working directory.
 """
+
+from pathlib import Path
 
 import streamlit as st
 
@@ -13,12 +18,19 @@ st.set_page_config(
     layout="wide",
 )
 
-home = st.Page("views/home.py", title="Welcome", icon=":material/home:",
+VIEWS = Path(__file__).parent / "views"
+
+home = st.Page(VIEWS / "home.py", title="Welcome", icon=":material/home:",
                default=True)
 
 gradient_descent = st.Page(
-    "views/gradient_descent.py", title="Gradient descent",
+    VIEWS / "gradient_descent.py", title="Gradient descent",
     icon=":material/trending_down:",
+)
+
+linear_regression = st.Page(
+    VIEWS / "linear_regression.py", title="Linear regression",
+    icon=":material/show_chart:",
 )
 
 # As Phase 1+ modules are written, add them under the matching section, e.g.
@@ -26,7 +38,7 @@ gradient_descent = st.Page(
 #   "Deep learning":  [perceptron, mlp, convolution],
 navigation = st.navigation({
     "Start here": [home],
-    "Machine learning": [gradient_descent],
+    "Machine learning": [gradient_descent, linear_regression],
 })
 
 navigation.run()
