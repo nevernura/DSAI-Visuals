@@ -48,13 +48,53 @@ logistic_regression = st.Page(
     icon=":material/call_split:",
 )
 
+
+svm = st.Page(
+    VIEWS / "svm.py", title="SVM",
+    icon=":material/commit:",
+)
+
+decision_tree = st.Page(
+    VIEWS / "decision_tree.py", title="Decision tree",
+    icon=":material/account_tree:",
+)
+
+k_means = st.Page(
+    VIEWS / "k_means.py", title="K-means",
+    icon=":material/hub:",
+)
+
+random_forest = st.Page(
+    VIEWS / "random_forest.py", title="Random forest",
+    icon=":material/forest:",
+)
+
+perceptron = st.Page(
+    VIEWS / "perceptron.py", title="Perceptron",
+    icon=":material/radio_button_checked:",
+)
+
+mlp = st.Page(
+    VIEWS / "mlp.py", title="MLP",
+    icon=":material/schema:",
+)
+
+convolution = st.Page(
+    VIEWS / "convolution.py", title="Convolution",
+    icon=":material/filter_center_focus:",
+)
+
 # As Phase 1+ modules are written, add them under the matching section, e.g.
 #   "Linear algebra": [vectors, matrix_multiply, separability],
 #   "Deep learning":  [perceptron, mlp, convolution],
 navigation = st.navigation({
     "Start here": [home],
     "Linear algebra": [eigenvectors, pca],
-    "Machine learning": [gradient_descent, linear_regression, logistic_regression],
+    "Machine learning": [
+        gradient_descent, linear_regression, logistic_regression,
+        svm, decision_tree, k_means,
+    ],
+    "Deep learning and ensembles": [random_forest, perceptron, mlp, convolution],
 })
 
 navigation.run()

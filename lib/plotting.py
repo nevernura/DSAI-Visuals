@@ -336,3 +336,133 @@ def pca_figure(points, mean, components, scores, n_components=2, show_shadow=Tru
     )
     return fig
 
+
+def classifier_figure(model, points, labels, title=None, support_vectors=None):
+    """Decision surface for a fitted 2D classifier."""
+    points = np.asarray(points, dtype=float)
+    labels = np.asarray(labels, dtype=int)
+    x_range = (float(points[:, 0].min()) - 1.0, float(points[:, 0].max()) + 1.0)
+    y_range = (float(points[:, 1].min()) - 1.0, float(points[:, 1].max()) + 1.0)
+    xs = np.linspace(*x_range, 90)
+    ys = np.linspace(*y_range, 90)
+    gx, gy = np.meshgrid(xs, ys)
+    grid = np.c_[gx.ravel(), gy.ravel()]
+    if hasattr(model, "predict_proba"):
+        z = model.predict_proba(grid)[:, 1]
+    elif hasattr(model, "decision_function"):
+        scores = model.decision_function(grid)
+        scale = np.max(np.abs(scores)) or 1.0
+        z = 0.5 + 0.5 * scores / scale
+    else:
+        z = model.predict(grid)
+    z = z.reshape(gx.shape)
+
+    fig = go.Figure()
+    fig.add_contour(
+        x=xs, y=ys, z=z, colorscale="RdBu", reversescale=True,
+        contours=dict(showlabels=False), opacity=0.35,
+        showscale=False, hoverinfo="skip",
+    )
+    mask = labels == 1
+    fig.add_scatter(
+        x=points[~mask, 0], y=points[~mask, 1], mode="markers",
+        marker=dict(size=8, color=CLASS_0, line=dict(width=1, color="white")),
+        name="class 0", hoverinfo="skip",
+    )
+    fig.add_scatter(
+        x=points[mask, 0], y=points[mask, 1], mode="markers",
+        marker=dict(size=8, color=CLASS_1, line=dict(width=1, color="white")),
+        name="class 1", hoverinfo="skip",
+    )
+    if support_vectors is not None:
+        support_vectors = np.asarray(support_vectors, dtype=float)
+        fig.add_scatter(
+            x=support_vectors[:, 0], y=support_vectors[:, 1], mode="markers",
+            marker=dict(size=13, color="rgba(0,0,0,0)", line=dict(width=2, color=MIN_MARK)),
+            name="support vectors", hoverinfo="skip",
+        )
+    fig.update_layout(
+        title=title, height=500, margin=dict(l=10, r=10, t=40, b=10),
+        xaxis=dict(title="feature 1", range=list(x_range), zeroline=False),
+        yaxis=dict(title="feature 2", range=list(y_range), zeroline=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def kmeans_figure(points, centroids, labels, step_label):
+    """Show one precomputed k-means assignment/recenter state."""
+    points = np.asarray(points, dtype=float)
+    centroids = np.asarray(centroids, dtype=float)
+    labels = np.asarray(labels, dtype=int)
+    palette = [CLASS_0, CLASS_1, "#72B7B2", "#F58518"]
+    fig = go.Figure()
+    for idx in range(len(centroids)):
+        mask = labels == idx
+        fig.add_scatter(
+            x=points[mask, 0], y=points[mask, 1], mode="markers",
+            marker=dict(size=7, color=palette[idx % len(palette)], opacity=0.75),
+            name=f"cluster {idx + 1}", hoverinfo="skip",
+        )
+    fig.add_scatter(
+        x=centroids[:, 0], y=centroids[:, 1], mode="markers",
+        marker=dict(symbol="x", size=16, color=MIN_MARK, line=dict(width=3)),
+        name="centroids", hoverinfo="skip",
+    )
+    pad = 1.0
+    fig.update_layout(
+        title=f"Step: {step_label}", height=500, margin=dict(l=10, r=10, t=40, b=10),
+        xaxis=dict(title="x", range=[points[:, 0].min() - pad, points[:, 0].max() + pad], zeroline=False),
+        yaxis=dict(title="y", range=[points[:, 1].min() - pad, points[:, 1].max() + pad], zeroline=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def perceptron_figure(points, labels, weights, bias):
+    """Scatter with a perceptron decision boundary."""
+    class Boundary:
+        def __init__(self, weights, bias):
+            self.weights = np.asarray(weights, dtype=float)
+            self.bias = float(bias)
+
+        def decision_function(self, grid):
+            return np.asarray(grid, dtype=float) @ self.weights + self.bias
+
+    fig = classifier_figure(Boundary(weights, bias), points, labels, title="Perceptron boundary")
+    x_range = fig.layout.xaxis.range
+    y_range = fig.layout.yaxis.range
+    w1, w2 = np.asarray(weights, dtype=float)
+    if abs(w2) > 1e-9:
+        xs = np.array(x_range, dtype=float)
+        ys = -(w1 * xs + bias) / w2
+        fig.add_scatter(x=xs, y=ys, mode="lines", line=dict(color=PATH_LINE, width=3), name="score = 0")
+    elif abs(w1) > 1e-9:
+        x0 = -bias / w1
+        fig.add_scatter(x=[x0, x0], y=list(y_range), mode="lines", line=dict(color=PATH_LINE, width=3), name="score = 0")
+    return fig
+
+
+def convolution_figure(image, output, row, col):
+    """Original image, active 3x3 patch, and convolution output."""
+    image = np.asarray(image, dtype=float)
+    output = np.asarray(output, dtype=float)
+    fig = make_subplots(
+        rows=1, cols=3,
+        subplot_titles=("Input image", "3x3 patch", "Feature map"),
+    )
+    fig.add_trace(go.Heatmap(z=image, colorscale="gray", showscale=False), row=1, col=1)
+    patch = image[row:row + 3, col:col + 3]
+    fig.add_trace(go.Heatmap(z=patch, colorscale="gray", showscale=False), row=1, col=2)
+    fig.add_trace(go.Heatmap(z=output, colorscale="gray", showscale=False), row=1, col=3)
+    fig.add_shape(type="rect", x0=col - 0.5, x1=col + 2.5, y0=row - 0.5, y1=row + 2.5,
+                  line=dict(color=PATH_LINE, width=3), row=1, col=1)
+    fig.update_yaxes(autorange="reversed")
+    fig.update_layout(
+        height=430, margin=dict(l=10, r=10, t=45, b=10),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
