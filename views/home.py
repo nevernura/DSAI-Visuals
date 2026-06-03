@@ -31,7 +31,7 @@ st.markdown(
 )
 
 st.info(
-    "This build ships the shared template and the gradient descent module as "
-    "the reference. New modules are added by copying that one page.",
+    "This build ships the shared template plus gradient descent, linear "
+    "regression, and logistic regression modules.",
     icon=":material/build:",
 )

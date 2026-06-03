@@ -33,12 +33,17 @@ linear_regression = st.Page(
     icon=":material/show_chart:",
 )
 
+logistic_regression = st.Page(
+    VIEWS / "logistic_regression.py", title="Logistic regression",
+    icon=":material/call_split:",
+)
+
 # As Phase 1+ modules are written, add them under the matching section, e.g.
 #   "Linear algebra": [vectors, matrix_multiply, separability],
 #   "Deep learning":  [perceptron, mlp, convolution],
 navigation = st.navigation({
     "Start here": [home],
-    "Machine learning": [gradient_descent, linear_regression],
+    "Machine learning": [gradient_descent, linear_regression, logistic_regression],
 })
 
 navigation.run()
