@@ -57,20 +57,18 @@ C.metric_row([
 ])
 
 # --- Maths ----------------------------------------------------------------
+
 def _math():
     st.markdown("The loss is a simple bowl. We want the point where it is lowest:")
     st.latex(r"L(w_1, w_2) = 0.08\,w_1^2 + 0.5\,w_2^2")
     st.markdown("The gradient points uphill, so we step the opposite way:")
-    st.latex(r"
-abla L = ig(0.16\,w_1,\; 1.0\,w_2ig)")
-    st.latex(r"w \leftarrow w - \eta \,
-abla L(w)")
+    st.latex(r"\nabla L = \big(0.16\,w_1,\; 1.0\,w_2\big)")
+    st.latex(r"w \leftarrow w - \eta \,\nabla L(w)")
     st.markdown(
         "Here eta is the learning rate -- how far we move on each step. "
         "The surface is steeper in w2 than w1, so one learning rate struggles "
         "to suit both directions."
     )
-
 
 C.show_math(_math)
 
