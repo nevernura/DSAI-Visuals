@@ -11,21 +11,25 @@ C.intro(
     "Slide a tiny filter over an image to build a feature map.",
 )
 
-# --- Controls -------------------------------------------------------------
-with st.sidebar:
-    st.header("Controls")
-    kernel_name = st.selectbox("Kernel", list(KERNELS))
-    row = st.slider("Patch row", 0, 29, 10)
-    col = st.slider("Patch column", 0, 29, 10)
-
-# --- Data -----------------------------------------------------------------
+plot = st.empty()
 image = sample_image(size=32)
+max_pos = image.shape[0] - 3
+n_positions = (max_pos + 1) * (max_pos + 1)
+
+# --- Controls -------------------------------------------------------------
+with C.controls():
+    kernel_name = st.selectbox("Kernel", list(KERNELS))
+    scan_step = st.slider("Kernel scan position", 0, n_positions - 1, 10 * (max_pos + 1) + 10)
+    row = scan_step // (max_pos + 1)
+    col = scan_step % (max_pos + 1)
+    st.caption(f"Patch top-left: row {row}, column {col}")
+
 kernel = KERNELS[kernel_name]
 raw_output = convolve2d(image, kernel)
 output = normalize_image(raw_output)
 
 # --- Visualisation --------------------------------------------------------
-st.plotly_chart(convolution_figure(image, output, row, col), width="stretch")
+plot.plotly_chart(convolution_figure(image, output, row, col), width="stretch")
 
 # --- Metrics --------------------------------------------------------------
 patch = image[row:row + 3, col:col + 3]
@@ -50,16 +54,13 @@ C.show_math(_math)
 
 # --- Guided tasks ---------------------------------------------------------
 C.try_this([
-    ("Choose **Edge detect**.",
-     "Flat regions become dark while sharp boundaries light up in the feature map."),
-    ("Switch to **Blur**.",
-     "The feature map smooths abrupt changes because the kernel averages neighbors."),
-    ("Move the patch sliders.",
-     "The highlighted square shows exactly which pixels produce one local response."),
+    ("Choose **Edge detect**.", "Flat regions become dark while sharp boundaries light up."),
+    ("Drag **Kernel scan position**.", "The highlighted square moves through the image like a sliding filter."),
+    ("Switch to **Blur**.", "The feature map smooths abrupt changes by averaging neighbors."),
 ])
 
 # --- The break-it moment --------------------------------------------------
 C.break_it(
-    "A convolution kernel only sees a small local patch. It can detect local "
-    "features, but larger meaning comes from combining many filters and layers."
+    "A convolution kernel only sees a small local patch. Larger meaning comes "
+    "from combining many filters and layers."
 )

@@ -3,7 +3,8 @@
 import numpy as np
 import streamlit as st
 
-from lib import components as C, datasets
+from lib import components as C
+from lib.data_options import CLASSIFICATION_OPTIONS, classification_data
 from lib.models import fit_perceptron, perceptron_predict
 from lib.plotting import perceptron_figure
 
@@ -14,23 +15,23 @@ C.intro(
 
 st.session_state.setdefault("perc_seed", 0)
 
+plot = st.empty()
+
 # --- Controls -------------------------------------------------------------
-with st.sidebar:
-    st.header("Controls")
+with C.controls():
+    data_kind = st.selectbox("Data", CLASSIFICATION_OPTIONS)
     learning_rate = st.slider("Learning rate", 0.01, 0.5, 0.1, 0.01)
     n_steps = st.slider("Training passes", 5, 120, 60, 5)
-    overlap = st.checkbox("Make data overlap", value=False)
     if st.button("New data"):
         st.session_state.perc_seed += 1
 
-# --- Data -----------------------------------------------------------------
-spread = 1.8 if overlap else 1.0
-points, labels = datasets.blobs(n=140, centers=2, spread=spread, seed=st.session_state.perc_seed)
+points, labels, data_note = classification_data(data_kind, seed=st.session_state.perc_seed, n=140)
 weights, bias, mistakes = fit_perceptron(points, labels, learning_rate, n_steps)
 predictions = perceptron_predict(points, weights, bias)
 
 # --- Visualisation --------------------------------------------------------
-st.plotly_chart(perceptron_figure(points, labels, weights, bias), width="stretch")
+plot.plotly_chart(perceptron_figure(points, labels, weights, bias), width="stretch")
+st.caption(data_note)
 
 # --- Metrics --------------------------------------------------------------
 C.metric_row([
@@ -42,22 +43,18 @@ C.metric_row([
 # --- Maths ----------------------------------------------------------------
 def _math():
     st.markdown("A perceptron computes a score and applies a hard threshold:")
-    st.latex(r"\hat{y} = \mathbb{1}[w^\top x + b \ge 0]")
+    st.latex(r"\hat{y} = \mathbb{1}[w^	op x + b \ge 0]")
     st.markdown("When it gets a point wrong, it nudges the weights toward the correct side:")
     st.latex(r"w \leftarrow w + \eta y x")
-    st.markdown("This is the single-neuron ancestor of logistic regression and neural networks.")
 
 
 C.show_math(_math)
 
 # --- Guided tasks ---------------------------------------------------------
 C.try_this([
-    ("Leave the data separable and increase **Training passes**.",
-     "The mistakes usually fall to zero once the boundary finds a separating line."),
-    ("Turn on **Make data overlap**.",
-     "The perceptron keeps making mistakes because no hard line can satisfy every point."),
-    ("Change the **Learning rate**.",
-     "Bigger nudges move the boundary faster but can bounce around on messy data."),
+    ("Use **Linearly separable** data and increase **Training passes**.", "Mistakes often fall to zero."),
+    ("Switch to **Non-linear rings**.", "One hard line cannot satisfy every point."),
+    ("Change the **Learning rate**.", "Bigger nudges move faster but can bounce around."),
 ])
 
 # --- The break-it moment --------------------------------------------------

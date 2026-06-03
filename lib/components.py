@@ -31,6 +31,12 @@ def metric_row(metrics):
         col.metric(label, value)
 
 
+def controls(title="Controls"):
+    """Container for controls placed directly below the visualization."""
+    st.subheader(title)
+    return st.container(border=True)
+
+
 def show_math(render_fn):
     """Intuition first: the maths lives one click away, not in the student's face."""
     with st.expander("Show the math"):

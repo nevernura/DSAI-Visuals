@@ -2,7 +2,8 @@
 
 import streamlit as st
 
-from lib import components as C, datasets
+from lib import components as C
+from lib.data_options import CLASSIFICATION_OPTIONS, classification_data
 from lib.models import accuracy, fit_decision_tree
 from lib.plotting import classifier_figure
 
@@ -13,22 +14,21 @@ C.intro(
 
 st.session_state.setdefault("tree_seed", 0)
 
+plot = st.empty()
+
 # --- Controls -------------------------------------------------------------
-with st.sidebar:
-    st.header("Controls")
+with C.controls():
+    data_kind = st.selectbox("Data", CLASSIFICATION_OPTIONS)
     max_depth = st.slider("Max depth", 1, 8, 3)
-    noisy = st.checkbox("Make the data noisy", value=False)
     if st.button("New data"):
         st.session_state.tree_seed += 1
 
-# --- Data -----------------------------------------------------------------
-spread = 1.9 if noisy else 1.25
-points, labels = datasets.blobs(n=180, centers=2, spread=spread,
-                                seed=st.session_state.tree_seed)
+points, labels, data_note = classification_data(data_kind, seed=st.session_state.tree_seed)
 model = fit_decision_tree(points, labels, max_depth=max_depth)
 
 # --- Visualisation --------------------------------------------------------
-st.plotly_chart(classifier_figure(model, points, labels), width="stretch")
+plot.plotly_chart(classifier_figure(model, points, labels), width="stretch")
+st.caption(data_note)
 
 # --- Metrics --------------------------------------------------------------
 C.metric_row([
@@ -41,24 +41,20 @@ C.metric_row([
 def _math():
     st.markdown("A tree asks one feature-threshold question at each split:")
     st.latex(r"x_j \le t")
-    st.markdown("The fitted rectangles are easy to inspect because every split is horizontal or vertical.")
-    st.markdown("Depth controls how many questions the tree can ask before making a prediction.")
+    st.markdown("Every split is horizontal or vertical, so the rectangles are easy to inspect.")
 
 
 C.show_math(_math)
 
 # --- Guided tasks ---------------------------------------------------------
 C.try_this([
-    ("Start with depth 1.",
-     "The tree has only one split, so it draws one broad rule."),
-    ("Increase depth slowly.",
-     "More rectangles appear and the training accuracy rises."),
-    ("Turn on **Make the data noisy** and push depth high.",
-     "The tree starts carving tiny regions around individual points: visible overfitting."),
+    ("Start with depth 1.", "The tree has only one broad split."),
+    ("Increase depth slowly.", "More rectangles appear and training accuracy rises."),
+    ("Try **Overlapping** data and push depth high.", "The tree carves tiny regions around individual points."),
 ])
 
 # --- The break-it moment --------------------------------------------------
 C.break_it(
-    "A deep tree can memorize noisy training data with many tiny rectangles. "
-    "That can look impressive on the training set while generalizing poorly."
+    "A deep tree can memorize noisy training data with many tiny rectangles, "
+    "which may generalize poorly."
 )

@@ -391,13 +391,27 @@ def classifier_figure(model, points, labels, title=None, support_vectors=None):
     return fig
 
 
-def kmeans_figure(points, centroids, labels, step_label):
+
+def kmeans_figure(points, centroids, labels, step_label, trail=None):
     """Show one precomputed k-means assignment/recenter state."""
     points = np.asarray(points, dtype=float)
     centroids = np.asarray(centroids, dtype=float)
     labels = np.asarray(labels, dtype=int)
     palette = [CLASS_0, CLASS_1, "#72B7B2", "#F58518"]
     fig = go.Figure()
+
+    if trail:
+        trail = [np.asarray(item, dtype=float) for item in trail]
+        for centroid_idx in range(len(centroids)):
+            xs = [state[centroid_idx, 0] for state in trail]
+            ys = [state[centroid_idx, 1] for state in trail]
+            fig.add_scatter(
+                x=xs, y=ys, mode="lines+markers",
+                line=dict(color=palette[centroid_idx % len(palette)], width=2, dash="dot"),
+                marker=dict(size=5, color=palette[centroid_idx % len(palette)]),
+                name=f"centroid {centroid_idx + 1} trail", hoverinfo="skip",
+            )
+
     for idx in range(len(centroids)):
         mask = labels == idx
         fig.add_scatter(
@@ -407,8 +421,8 @@ def kmeans_figure(points, centroids, labels, step_label):
         )
     fig.add_scatter(
         x=centroids[:, 0], y=centroids[:, 1], mode="markers",
-        marker=dict(symbol="x", size=16, color=MIN_MARK, line=dict(width=3)),
-        name="centroids", hoverinfo="skip",
+        marker=dict(symbol="x", size=17, color=MIN_MARK, line=dict(width=3)),
+        name="current centroids", hoverinfo="skip",
     )
     pad = 1.0
     fig.update_layout(
@@ -457,8 +471,14 @@ def convolution_figure(image, output, row, col):
     patch = image[row:row + 3, col:col + 3]
     fig.add_trace(go.Heatmap(z=patch, colorscale="gray", showscale=False), row=1, col=2)
     fig.add_trace(go.Heatmap(z=output, colorscale="gray", showscale=False), row=1, col=3)
-    fig.add_shape(type="rect", x0=col - 0.5, x1=col + 2.5, y0=row - 0.5, y1=row + 2.5,
-                  line=dict(color=PATH_LINE, width=3), row=1, col=1)
+    fig.add_shape(
+        type="rect", x0=col - 0.5, x1=col + 2.5, y0=row - 0.5, y1=row + 2.5,
+        line=dict(color=PATH_LINE, width=3), row=1, col=1,
+    )
+    fig.add_shape(
+        type="rect", x0=col + 0.5, x1=col + 1.5, y0=row + 0.5, y1=row + 1.5,
+        line=dict(color=PATH_LINE, width=3), row=1, col=3,
+    )
     fig.update_yaxes(autorange="reversed")
     fig.update_layout(
         height=430, margin=dict(l=10, r=10, t=45, b=10),

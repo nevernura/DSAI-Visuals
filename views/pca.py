@@ -2,7 +2,8 @@
 
 import streamlit as st
 
-from lib import components as C, datasets
+from lib import components as C
+from lib.data_options import PCA_OPTIONS, pca_data
 from lib.pca import fit_pca
 from lib.plotting import pca_figure
 
@@ -13,24 +14,25 @@ C.intro(
 
 st.session_state.setdefault("pca_seed", 0)
 
+plot = st.empty()
+
 # --- Controls -------------------------------------------------------------
-with st.sidebar:
-    st.header("Controls")
+with C.controls():
+    data_kind = st.selectbox("Data", PCA_OPTIONS)
     n_components = st.slider("Projection dimensions", 1, 2, value=2)
     show_shadow = st.checkbox("Show projection shadow", value=True)
     if st.button("New cloud"):
         st.session_state.pca_seed += 1
 
-# --- Data -----------------------------------------------------------------
-points = datasets.correlated_cloud_3d(seed=st.session_state.pca_seed)
+points, data_note = pca_data(data_kind, seed=st.session_state.pca_seed)
 mean, components, variances, explained, scores = fit_pca(points)
 
 # --- Visualisation --------------------------------------------------------
-st.plotly_chart(
-    pca_figure(points, mean, components, scores,
-               n_components=n_components, show_shadow=show_shadow),
+plot.plotly_chart(
+    pca_figure(points, mean, components, scores, n_components=n_components, show_shadow=show_shadow),
     width="stretch",
 )
+st.caption(data_note)
 
 # --- Metrics --------------------------------------------------------------
 shown = explained[:n_components].sum()
@@ -43,29 +45,22 @@ C.metric_row([
 # --- Maths ----------------------------------------------------------------
 def _math():
     st.markdown("PCA centers the data, builds a covariance matrix, then finds its eigenvectors:")
-    st.latex(r"\Sigma = \frac{1}{n-1} X^\top X")
+    st.latex(r"\Sigma = rac{1}{n-1} X^	op X")
     st.latex(r"\Sigma v = \lambda v")
-    st.markdown(
-        "The largest eigenvalue points to the direction with the most variance. "
-        "Projecting onto the first few eigenvectors gives a lower-dimensional "
-        "shadow that keeps as much spread as possible."
-    )
+    st.markdown("The largest eigenvalue points to the direction with the most variance.")
 
 
 C.show_math(_math)
 
 # --- Guided tasks ---------------------------------------------------------
 C.try_this([
-    ("Rotate the 3D plot with your mouse.",
-     "The long orange PC1 axis follows the longest direction through the cloud."),
-    ("Switch **Projection dimensions** from 2 to 1.",
-     "The shadow collapses to a line, keeping PC1 and discarding the next direction."),
-    ("Press **New cloud** a few times.",
-     "The exact points change, but PCA keeps finding the directions with the most spread."),
+    ("Rotate the 3D plot with your mouse.", "The long orange PC1 axis follows the longest direction."),
+    ("Switch **Projection dimensions** from 2 to 1.", "The shadow collapses to a line."),
+    ("Try a real dataset.", "PCA still finds directions of maximum spread."),
 ])
 
 # --- The break-it moment --------------------------------------------------
 C.break_it(
     "PCA keeps variance, not meaning. If the important signal lives in a small "
-    "low-variance direction, PCA can hide it while preserving a very accurate-looking shadow."
+    "low-variance direction, PCA can hide it."
 )
