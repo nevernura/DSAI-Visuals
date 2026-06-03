@@ -55,14 +55,14 @@ C.metric_row([
 ])
 
 # --- Maths ----------------------------------------------------------------
+
 def _math():
     st.markdown("Logistic regression starts with a straight-line score:")
     st.latex(r"z = w_1x_1 + w_2x_2 + b")
     st.markdown("The sigmoid turns that score into a probability between 0 and 1:")
-    st.latex(r"p(y=1\mid x) = rac{1}{1 + e^{-z}}")
+    st.latex(r"p(y=1\mid x) = \frac{1}{1 + e^{-z}}")
     st.markdown("The decision boundary is where the model is exactly unsure:")
     st.latex(r"p = 0.5 \quad\Longleftrightarrow\quad w_1x_1 + w_2x_2 + b = 0")
-
 
 C.show_math(_math)
 

@@ -51,13 +51,13 @@ C.metric_row([
 ])
 
 # --- Maths ----------------------------------------------------------------
+
 def _math():
     st.markdown("A line is two numbers -- a slope and an intercept:")
     st.latex(r"\hat{y} = m\,x + b")
     st.markdown("We score a line by mean squared error:")
-    st.latex(r"	ext{MSE} = rac{1}{n}\sum_i (\hat{y}_i - y_i)^2")
+    st.latex(r"\text{MSE} = \frac{1}{n}\sum_i (\hat{y}_i - y_i)^2")
     st.markdown("Best fit is the slope and intercept that make this smallest.")
-
 
 C.show_math(_math)
 

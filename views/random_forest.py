@@ -39,11 +39,11 @@ C.metric_row([
 ])
 
 # --- Maths ----------------------------------------------------------------
+
 def _math():
     st.markdown("A random forest averages many tree predictions:")
-    st.latex(r"\hat{p}(y=1|x) = rac{1}{T}\sum_{t=1}^{T} \hat{p}_t(y=1|x)")
+    st.latex(r"\hat{p}(y=1|x) = \frac{1}{T}\sum_{t=1}^{T} \hat{p}_t(y=1|x)")
     st.markdown("Each tree sees a bootstrap sample and random feature choices, so their mistakes are less synchronized.")
-
 
 C.show_math(_math)
 

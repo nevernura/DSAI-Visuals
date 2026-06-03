@@ -41,12 +41,12 @@ C.metric_row([
 ])
 
 # --- Maths ----------------------------------------------------------------
+
 def _math():
     st.markdown("K-means repeats two simple operations:")
-    st.latex(r"c_i = rg\min_k \lVert x_i - \mu_k Vert^2")
-    st.latex(r"\mu_k = rac{1}{|C_k|}\sum_{x_i \in C_k} x_i")
+    st.latex(r"c_i = \arg\min_k \lVert x_i - \mu_k \rVert^2")
+    st.latex(r"\mu_k = \frac{1}{|C_k|}\sum_{x_i \in C_k} x_i")
     st.markdown("First assign each point, then move each centroid to the mean of its assigned points.")
-
 
 C.show_math(_math)
 

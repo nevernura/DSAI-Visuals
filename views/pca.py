@@ -43,12 +43,12 @@ C.metric_row([
 ])
 
 # --- Maths ----------------------------------------------------------------
+
 def _math():
     st.markdown("PCA centers the data, builds a covariance matrix, then finds its eigenvectors:")
-    st.latex(r"\Sigma = rac{1}{n-1} X^	op X")
+    st.latex(r"\Sigma = \frac{1}{n-1} X^\top X")
     st.latex(r"\Sigma v = \lambda v")
     st.markdown("The largest eigenvalue points to the direction with the most variance.")
-
 
 C.show_math(_math)
 
