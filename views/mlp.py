@@ -2,7 +2,8 @@
 
 import streamlit as st
 
-from lib import components as C, datasets
+from lib import components as C
+from lib.data_options import CLASSIFICATION_OPTIONS, classification_data
 from lib.models import accuracy, fit_mlp
 from lib.plotting import classifier_figure
 
@@ -13,21 +14,22 @@ C.intro(
 
 st.session_state.setdefault("mlp_seed", 0)
 
+plot = st.empty()
+
 # --- Controls -------------------------------------------------------------
-with st.sidebar:
-    st.header("Controls")
+with C.controls():
+    data_kind = st.selectbox("Data", CLASSIFICATION_OPTIONS, index=2)
     hidden_units = st.slider("Hidden neurons", 2, 16, 8, 2)
-    alpha = st.slider("Regularization", 0.0001, 0.02, 0.001, 0.0001,
-                      format="%.4f")
+    alpha = st.slider("Regularization", 0.0001, 0.02, 0.001, 0.0001, format="%.4f")
     if st.button("New data"):
         st.session_state.mlp_seed += 1
 
-# --- Data -----------------------------------------------------------------
-points, labels = datasets.two_rings(n=180, noise=0.12, seed=st.session_state.mlp_seed)
+points, labels, data_note = classification_data(data_kind, seed=st.session_state.mlp_seed)
 model = fit_mlp(points, labels, hidden_units=hidden_units, alpha=alpha)
 
 # --- Visualisation --------------------------------------------------------
-st.plotly_chart(classifier_figure(model, points, labels), width="stretch")
+plot.plotly_chart(classifier_figure(model, points, labels), width="stretch")
+st.caption(data_note)
 
 # --- Metrics --------------------------------------------------------------
 C.metric_row([
@@ -39,21 +41,18 @@ C.metric_row([
 # --- Maths ----------------------------------------------------------------
 def _math():
     st.markdown("An MLP stacks neuron activations in layers:")
-    st.latex(r"h = \tanh(W_1x + b_1)")
+    st.latex(r"h = 	anh(W_1x + b_1)")
     st.latex(r"\hat{y} = \sigma(W_2h + b_2)")
-    st.markdown("The hidden layer creates intermediate features, so the final boundary can curve around non-separable data.")
+    st.markdown("The hidden layer creates intermediate features, so the final boundary can curve.")
 
 
 C.show_math(_math)
 
 # --- Guided tasks ---------------------------------------------------------
 C.try_this([
-    ("Start with only two hidden neurons.",
-     "The boundary may be too simple to wrap around the rings."),
-    ("Increase **Hidden neurons**.",
-     "The boundary gains enough flexibility to separate the inner and outer classes."),
-    ("Raise **Regularization**.",
-     "The model is discouraged from making an overly wiggly boundary."),
+    ("Start with only two hidden neurons.", "The boundary may be too simple for rings."),
+    ("Increase **Hidden neurons**.", "The model gains enough flexibility to bend around classes."),
+    ("Raise **Regularization**.", "The model is discouraged from wiggly boundaries."),
 ])
 
 # --- The break-it moment --------------------------------------------------
