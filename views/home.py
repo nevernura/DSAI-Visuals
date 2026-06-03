@@ -23,16 +23,17 @@ st.markdown(
 
 st.subheader("The roadmap")
 st.markdown(
-    "**Phase 1 - the core path:** gradient descent, linear regression, "
-    "and logistic regression are live.\n\n"
-    "**Phase 2 - expansion:** eigenvectors, PCA, SVM, decision tree, "
-    "and k-means are live.\n\n"
-    "**Phase 3 - deep learning and ensembles:** random forest, perceptron, "
-    "MLP, and convolution are live."
+    "**Linear algebra foundations:** vectors and dot products, matrix "
+    "transformations, matrix multiplication, orthogonality/projections, "
+    "eigenvectors, and PCA are live.\n\n"
+    "**Machine learning core:** gradient descent, linear regression, logistic "
+    "regression, SVM, decision tree, and k-means are live.\n\n"
+    "**Deep learning and ensembles:** random forest, perceptron, MLP, and "
+    "convolution are live."
 )
 
 st.info(
-    "This build ships the shared template, the machine-learning sequence, "
-    "and the first deep-learning and ensemble lessons.",
+    "This build ships the shared template plus a broader linear-algebra, "
+    "machine-learning, and deep-learning visual sequence.",
     icon=":material/build:",
 )

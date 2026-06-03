@@ -23,6 +23,26 @@ VIEWS = Path(__file__).parent / "views"
 home = st.Page(VIEWS / "home.py", title="Welcome", icon=":material/home:",
                default=True)
 
+vectors_dot_product = st.Page(
+    VIEWS / "vectors_dot_product.py", title="Vectors and dot product",
+    icon=":material/arrow_outward:",
+)
+
+matrix_transformations = st.Page(
+    VIEWS / "matrix_transformations.py", title="Matrix transformations",
+    icon=":material/grid_on:",
+)
+
+matrix_multiplication = st.Page(
+    VIEWS / "matrix_multiplication.py", title="Matrix multiplication",
+    icon=":material/close_fullscreen:",
+)
+
+orthogonality_projections = st.Page(
+    VIEWS / "orthogonality_projections.py", title="Orthogonality and projections",
+    icon=":material/vertical_align_bottom:",
+)
+
 eigenvectors = st.Page(
     VIEWS / "eigenvectors.py", title="Eigenvectors and eigenvalues",
     icon=":material/open_in_full:",
@@ -89,7 +109,11 @@ convolution = st.Page(
 #   "Deep learning":  [perceptron, mlp, convolution],
 navigation = st.navigation({
     "Start here": [home],
-    "Linear algebra": [eigenvectors, pca],
+    "Linear algebra": [
+        vectors_dot_product, matrix_transformations,
+        matrix_multiplication, orthogonality_projections,
+        eigenvectors, pca,
+    ],
     "Machine learning": [
         gradient_descent, linear_regression, logistic_regression,
         svm, decision_tree, k_means,
