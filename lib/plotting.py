@@ -9,6 +9,7 @@ same visual language.
 
 import numpy as np
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from lib.descent import surface_grid, X_RANGE, Y_RANGE
 from lib.logistic import probabilities
@@ -186,3 +187,152 @@ def logistic_figure(points, labels, weights, bias, show_probability=True):
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig
+
+
+def eigen_figure(matrix, values, vectors, show_circle=True):
+    """Show a 2D matrix transform and the directions it leaves unchanged."""
+    matrix = np.asarray(matrix, dtype=float)
+    values = np.asarray(values, dtype=float)
+    vectors = np.asarray(vectors, dtype=float)
+
+    fig = go.Figure()
+
+    if show_circle:
+        theta = np.linspace(0.0, 2.0 * np.pi, 160)
+        circle = np.c_[np.cos(theta), np.sin(theta)]
+        transformed = circle @ matrix.T
+        fig.add_scatter(
+            x=circle[:, 0], y=circle[:, 1], mode="lines",
+            line=dict(color="rgba(255,255,255,0.35)", width=1),
+            name="unit circle", hoverinfo="skip",
+        )
+        fig.add_scatter(
+            x=transformed[:, 0], y=transformed[:, 1], mode="lines",
+            line=dict(color=PATH_LINE, width=3),
+            name="transformed circle", hoverinfo="skip",
+        )
+
+    basis = np.array([[1.0, 0.0], [0.0, 1.0]])
+    transformed_basis = basis @ matrix.T
+    for start, end, color, name in [
+        (np.zeros(2), transformed_basis[0], "#4C78A8", "A e1"),
+        (np.zeros(2), transformed_basis[1], "#72B7B2", "A e2"),
+    ]:
+        fig.add_scatter(
+            x=[start[0], end[0]], y=[start[1], end[1]], mode="lines+markers",
+            line=dict(color=color, width=2),
+            marker=dict(size=6, color=color),
+            name=name, hoverinfo="skip",
+        )
+
+    for i in range(2):
+        vector = vectors[:, i]
+        scaled = values[i] * vector
+        fig.add_scatter(
+            x=[-scaled[0], scaled[0]], y=[-scaled[1], scaled[1]],
+            mode="lines",
+            line=dict(color=CLASS_1 if i == 0 else CLASS_0, width=4, dash="dash"),
+            name=f"eigenvector {i + 1}", hoverinfo="skip",
+        )
+
+    limit = max(3.0, float(np.max(np.abs(matrix))) * 2.5)
+    fig.update_layout(
+        height=500, margin=dict(l=10, r=10, t=20, b=10),
+        xaxis=dict(title="x", range=[-limit, limit], zeroline=True, scaleanchor="y"),
+        yaxis=dict(title="y", range=[-limit, limit], zeroline=True),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def pca_figure(points, mean, components, scores, n_components=2, show_shadow=True):
+    """3D PCA cloud with principal axes and an optional projection shadow."""
+    points = np.asarray(points, dtype=float)
+    mean = np.asarray(mean, dtype=float)
+    components = np.asarray(components, dtype=float)
+    scores = np.asarray(scores, dtype=float)
+
+    fig = make_subplots(
+        rows=1, cols=2,
+        specs=[[{"type": "scene"}, {"type": "xy"}]],
+        subplot_titles=("3D cloud and principal directions", "PCA shadow"),
+        column_widths=[0.58, 0.42],
+    )
+
+    fig.add_trace(
+        go.Scatter3d(
+            x=points[:, 0], y=points[:, 1], z=points[:, 2],
+            mode="markers",
+            marker=dict(size=3, color=PATH_DOT, opacity=0.7),
+            name="points", hoverinfo="skip",
+        ),
+        row=1, col=1,
+    )
+
+    if show_shadow:
+        kept = max(1, min(int(n_components), 2))
+        projected = scores[:, :kept] @ components[:kept] + mean
+        fig.add_trace(
+            go.Scatter3d(
+                x=projected[:, 0], y=projected[:, 1], z=projected[:, 2],
+                mode="markers",
+                marker=dict(size=2, color="rgba(136,135,128,0.45)"),
+                name="projection", hoverinfo="skip",
+            ),
+            row=1, col=1,
+        )
+        for point, shadow in zip(points[::12], projected[::12]):
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[point[0], shadow[0]], y=[point[1], shadow[1]],
+                    z=[point[2], shadow[2]], mode="lines",
+                    line=dict(color="rgba(136,135,128,0.25)", width=1),
+                    showlegend=False, hoverinfo="skip",
+                ),
+                row=1, col=1,
+            )
+
+    axis_colors = [CLASS_1, CLASS_0, "#72B7B2"]
+    for i, component in enumerate(components):
+        length = float(np.std(scores[:, i]) * 2.5)
+        start = mean - component * length
+        end = mean + component * length
+        fig.add_trace(
+            go.Scatter3d(
+                x=[start[0], end[0]], y=[start[1], end[1]], z=[start[2], end[2]],
+                mode="lines",
+                line=dict(color=axis_colors[i], width=6),
+                name=f"PC{i + 1}", hoverinfo="skip",
+            ),
+            row=1, col=1,
+        )
+
+    fig.add_trace(
+        go.Scatter(
+            x=scores[:, 0],
+            y=scores[:, 1] if n_components == 2 else np.zeros(len(scores)),
+            mode="markers",
+            marker=dict(size=6, color=PATH_DOT, opacity=0.75),
+            name="shadow", hoverinfo="skip",
+        ),
+        row=1, col=2,
+    )
+
+    fig.update_xaxes(title_text="PC1 score", zeroline=False, row=1, col=2)
+    fig.update_yaxes(title_text="PC2 score" if n_components == 2 else "collapsed",
+                     zeroline=False, row=1, col=2)
+    fig.update_layout(
+        height=540, margin=dict(l=10, r=10, t=45, b=10),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    fig.update_scenes(
+        xaxis_title="x", yaxis_title="y", zaxis_title="z",
+        xaxis=dict(backgroundcolor="rgba(0,0,0,0)"),
+        yaxis=dict(backgroundcolor="rgba(0,0,0,0)"),
+        zaxis=dict(backgroundcolor="rgba(0,0,0,0)"),
+    )
+    return fig
+

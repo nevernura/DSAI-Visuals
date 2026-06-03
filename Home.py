@@ -23,6 +23,16 @@ VIEWS = Path(__file__).parent / "views"
 home = st.Page(VIEWS / "home.py", title="Welcome", icon=":material/home:",
                default=True)
 
+eigenvectors = st.Page(
+    VIEWS / "eigenvectors.py", title="Eigenvectors and eigenvalues",
+    icon=":material/open_in_full:",
+)
+
+pca = st.Page(
+    VIEWS / "pca.py", title="PCA",
+    icon=":material/view_in_ar:",
+)
+
 gradient_descent = st.Page(
     VIEWS / "gradient_descent.py", title="Gradient descent",
     icon=":material/trending_down:",
@@ -43,6 +53,7 @@ logistic_regression = st.Page(
 #   "Deep learning":  [perceptron, mlp, convolution],
 navigation = st.navigation({
     "Start here": [home],
+    "Linear algebra": [eigenvectors, pca],
     "Machine learning": [gradient_descent, linear_regression, logistic_regression],
 })
 
