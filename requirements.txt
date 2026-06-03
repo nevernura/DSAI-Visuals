@@ -1,4 +1,4 @@
- zstreamlit>=1.49
+streamlit>=1.49
 numpy
 plotly
 scikit-learn
